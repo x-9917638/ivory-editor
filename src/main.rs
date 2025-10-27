@@ -1,4 +1,13 @@
-#![warn(clippy::all, clippy::pedantic, clippy::print_stdout)]
+#![forbid(clippy::correctness)]
+#![warn(
+    clippy::pedantic,
+    clippy::print_stdout,
+    clippy::suspicious,
+    clippy::complexity,
+    clippy::perf,
+    clippy::style
+)]
+#![allow(clippy::empty_docs)]
 mod editor;
 mod terminal;
 
