@@ -2,20 +2,26 @@ use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode, size};
 use crossterm::{Command, queue};
-use std::fmt::Display;
+use core::fmt::Display;
 use std::io::{Error, Write as _, stdout};
 
 #[derive(Copy, Clone)]
 pub struct Size {
-    pub width: u16,
-    pub height: u16,
+    pub width: usize,
+    pub height: usize,
 }
 #[derive(Copy, Clone)]
 pub struct Position {
-    pub x: u16,
-    pub y: u16,
+    pub x: usize,
+    pub y: usize,
 }
 
+/// Represents the Terminal.
+/// Edge Case for platforms where `usize` < `u16`:
+/// Regardless of the actual size of the Terminal, this representation
+/// only spans over at most `usize::MAX` or `u16::size` rows/columns, whichever is smaller.
+/// Each size returned truncates to min(`usize::MAX`, `u16::MAX`)
+/// And should you attempt to set the cursor out of these bounds, it will also be truncated.
 pub struct Terminal;
 
 impl Terminal {
@@ -49,16 +55,26 @@ impl Terminal {
     pub fn show_cursor() -> Result<(), Error> {
         Self::queue_cmd(Show)
     }
+    
 
+    /// Moves the cursor to the given Position.
+    /// # Arguments
+    /// * `Position` - the  `Position`to move the cursor to. Will be truncated to `u16::MAX` if bigger.
+    #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
     pub fn move_cursor_to(p: Position) -> Result<(), Error> {
-        Self::queue_cmd(MoveTo(p.x, p.y))
+        Self::queue_cmd(MoveTo(p.x as u16, p.y as u16))
     }
 
+    /// Returns the current size of this Terminal.
+    /// Edge Case for systems with `usize` < `u16`:
+    /// * A `Size` representing the terminal size. Any coordinate `z` truncated to `usize` if `usize` < `z` < `u16`
     pub fn size() -> Result<Size, Error> {
         let size = size()?;
         Ok(Size {
-            width: size.0,
-            height: size.1,
+            #[allow(clippy::as_conversions)]
+            width: size.0 as usize,
+            #[allow(clippy::as_conversions)]
+            height: size.1 as usize,
         })
     }
 

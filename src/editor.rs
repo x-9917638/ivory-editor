@@ -26,19 +26,16 @@ impl Editor {
         let Size { width, .. } = Terminal::size()?;
 
         let text = format!("{NAME} - {VERSION}");
-        let length = match u16::try_from(text.len()) {
-            Ok(n) => n,
-            Err(e) => panic!("Internal error: {e:#?}"),
-        };
+        let length = text.len();
         
         // Doesn't need to be exact.
-        #[allow(clippy::integer_division)]
-        let amt = ((width - length) / 2 - 1) as usize;
+        #[expect(clippy::integer_division)]
+        let amt = ((width.saturating_sub(length)) / 2).saturating_sub(1);
 
         let padding = " ".repeat(amt);
 
         let mut msg = format!("~{padding}{text}");
-        msg.truncate(width as usize);
+        msg.truncate(width);
 
         Terminal::print(&msg)?;
         Terminal::execute()
@@ -75,7 +72,7 @@ impl Editor {
         for row in 0..height {
             Terminal::clear_line()?;
 
-            #[allow(clippy::integer_division)]
+            #[expect(clippy::integer_division)]
             if row == height / 3 {
                 Self::welcome()?;
             } else {
