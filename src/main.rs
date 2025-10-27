@@ -5,6 +5,9 @@ mod terminal;
 
 use editor::Editor;
 
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() {
     let mut editor = Editor::default();
 

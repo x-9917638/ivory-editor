@@ -3,6 +3,7 @@ use std::io::Error;
 
 
 use crate::terminal::{Position, Size, Terminal};
+use crate::{VERSION, NAME};
 
 pub struct Editor {
     should_quit: bool,
@@ -20,6 +21,22 @@ impl Editor {
         let result = self.repl();
         Terminal::terminate().unwrap();
         result.unwrap();
+    }
+
+    fn welcome() -> Result<(), Error> {
+        let Size{width, ..} = Terminal::size()?;
+        
+        let text = format!("{NAME} - {VERSION}");
+        let length = text.len() as u16;
+        
+        let amt = ((width - length) / 2 - 1) as usize;
+        let padding = " ".repeat(amt);
+        
+        let mut msg = format!("~{padding}{text}");
+        msg.truncate(width as usize);
+        
+        Terminal::print(&msg)?;
+        Terminal::execute()
     }
 
     fn repl(&mut self) -> Result<(), Error> {
@@ -52,7 +69,11 @@ impl Editor {
         let Size{height, ..} = Terminal::size()?;
         for row in 0..height {
             Terminal::clear_line()?;
-            Terminal::print("~")?;
+            if row == height / 3 {
+                Self::welcome()?;
+            } else {
+                Terminal::print("~")?;
+            }
             if row != height - 1 {
                 Terminal::print("\r\n")?;
             }
