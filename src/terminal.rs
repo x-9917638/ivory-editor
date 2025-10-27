@@ -1,9 +1,9 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode, size};
-use crossterm::{queue, Command};
+use crossterm::{Command, queue};
 use std::fmt::Display;
-use std::io::{Error, Write, stdout};
+use std::io::{Error, Write as _, stdout};
 
 #[derive(Copy, Clone)]
 pub struct Size {

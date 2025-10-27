@@ -1,9 +1,8 @@
 use crossterm::event::{Event, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers, read};
 use std::io::Error;
 
-
 use crate::terminal::{Position, Size, Terminal};
-use crate::{VERSION, NAME};
+use crate::{NAME, VERSION};
 
 pub struct Editor {
     should_quit: bool,
@@ -24,20 +23,23 @@ impl Editor {
     }
 
     fn welcome() -> Result<(), Error> {
-        let Size{width, ..} = Terminal::size()?;
-        
+        let Size { width, .. } = Terminal::size()?;
+
         let text = format!("{NAME} - {VERSION}");
         let length = match u16::try_from(text.len()) {
             Ok(n) => n,
-            Err(e) => panic!("Internal error: {e:#?}")
+            Err(e) => panic!("Internal error: {e:#?}"),
         };
         
+        // Doesn't need to be exact.
+        #[allow(clippy::integer_division)]
         let amt = ((width - length) / 2 - 1) as usize;
+
         let padding = " ".repeat(amt);
-        
+
         let mut msg = format!("~{padding}{text}");
         msg.truncate(width as usize);
-        
+
         Terminal::print(&msg)?;
         Terminal::execute()
     }
@@ -69,15 +71,17 @@ impl Editor {
     }
 
     fn draw_rows() -> Result<(), Error> {
-        let Size{height, ..} = Terminal::size()?;
+        let Size { height, .. } = Terminal::size()?;
         for row in 0..height {
             Terminal::clear_line()?;
+
+            #[allow(clippy::integer_division)]
             if row == height / 3 {
                 Self::welcome()?;
             } else {
                 Terminal::print("~")?;
             }
-            if row != height - 1 {
+            if row < height.saturating_sub(1) {
                 Terminal::print("\r\n")?;
             }
         }
@@ -91,12 +95,9 @@ impl Editor {
             Terminal::print("Goodbye.\r\n")?;
         } else {
             Self::draw_rows()?;
-            Terminal::move_cursor_to(Position{
-                x: 0,
-                y:0
-            })?;
-        Terminal::show_cursor()?;
-        Terminal::execute()?;
+            Terminal::move_cursor_to(Position { x: 0, y: 0 })?;
+            Terminal::show_cursor()?;
+            Terminal::execute()?;
         }
         Ok(())
     }
