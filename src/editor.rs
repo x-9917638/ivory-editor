@@ -1,43 +1,35 @@
 use crossterm::event::{Event, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers, read};
-use crossterm::execute;
-use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
-use std::io::stdout;
+use std::io::Error;
+
+
+use crate::terminal::{Position, Size, Terminal};
 
 pub struct Editor {
     should_quit: bool,
 }
 
 impl Editor {
-    pub fn default() -> Self {
-        Editor { should_quit: false }
+    pub const fn default() -> Self {
+        Self { should_quit: false }
     }
 
     // pub fn new(opts) -> Self
 
     pub fn run(&mut self) {
-        Self::initialise().unwrap();
+        Terminal::initialise().unwrap();
         let result = self.repl();
-        Self::terminate().unwrap();
+        Terminal::terminate().unwrap();
         result.unwrap();
     }
 
-    fn initialise() -> Result<(), std::io::Error> {
-        enable_raw_mode()?;
-        Self::clear_screen()
-    }
-
-    fn terminate() -> Result<(), std::io::Error> {
-        disable_raw_mode()
-    }
-
-    fn repl(&mut self) -> Result<(), std::io::Error> {
+    fn repl(&mut self) -> Result<(), Error> {
         loop {
-            let event = read()?;
-            self.evaluate_event(&event);
             self.refresh_screen()?;
             if self.should_quit {
                 break;
             }
+            let event = read()?;
+            self.evaluate_event(&event);
         }
         Ok(())
     }
@@ -56,16 +48,32 @@ impl Editor {
         }
     }
 
-    fn refresh_screen(&self) -> Result<(), std::io::Error> {
-        if self.should_quit {
-            Self::clear_screen()?;
-            print!("Goodbye.\r\n");
+    fn draw_rows() -> Result<(), Error> {
+        let Size{height, ..} = Terminal::size()?;
+        for row in 0..height {
+            Terminal::clear_line()?;
+            Terminal::print("~")?;
+            if row != height - 1 {
+                Terminal::print("\r\n")?;
+            }
         }
         Ok(())
     }
 
-    fn clear_screen() -> Result<(), std::io::Error> {
-        let mut stdout = stdout();
-        execute!(stdout, Clear(ClearType::All))
+    fn refresh_screen(&self) -> Result<(), Error> {
+        Terminal::hide_cursor()?;
+        if self.should_quit {
+            Terminal::clear_screen()?;
+            Terminal::print("Goodbye.\r\n")?;
+        } else {
+            Self::draw_rows()?;
+            Terminal::move_cursor_to(Position{
+                x: 0,
+                y:0
+            })?;
+        Terminal::show_cursor()?;
+        Terminal::execute()?;
+        }
+        Ok(())
     }
 }
