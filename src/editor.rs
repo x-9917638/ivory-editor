@@ -27,7 +27,10 @@ impl Editor {
         let Size{width, ..} = Terminal::size()?;
         
         let text = format!("{NAME} - {VERSION}");
-        let length = text.len() as u16;
+        let length = match u16::try_from(text.len()) {
+            Ok(n) => n,
+            Err(e) => panic!("Internal error: {e:#?}")
+        };
         
         let amt = ((width - length) / 2 - 1) as usize;
         let padding = " ".repeat(amt);
