@@ -1,7 +1,8 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode, size};
-use crossterm::{queue};
+use crossterm::{queue, Command};
+use std::fmt::Display;
 use std::io::{Error, Write, stdout};
 
 #[derive(Copy, Clone)]
@@ -29,29 +30,28 @@ impl Terminal {
         disable_raw_mode()
     }
 
-    pub fn print(s: &str) -> Result<(), Error> {
-        queue!(stdout(), Print(s))
+    pub fn print(s: impl Display) -> Result<(), Error> {
+        Self::queue_cmd(Print(s))
     }
 
     pub fn clear_screen() -> Result<(), Error> {
-        let mut stdout = stdout();
-        queue!(stdout, Clear(ClearType::All))
+        Self::queue_cmd(Clear(ClearType::All))
     }
 
     pub fn clear_line() -> Result<(), Error> {
-        queue!(stdout(), Clear(ClearType::CurrentLine))
+        Self::queue_cmd(Clear(ClearType::CurrentLine))
     }
 
     pub fn hide_cursor() -> Result<(), Error> {
-        queue!(stdout(), Hide)
+        Self::queue_cmd(Hide)
     }
 
     pub fn show_cursor() -> Result<(), Error> {
-        queue!(stdout(), Show)
+        Self::queue_cmd(Show)
     }
 
     pub fn move_cursor_to(p: Position) -> Result<(), Error> {
-        queue!(stdout(), MoveTo(p.x, p.y))
+        Self::queue_cmd(MoveTo(p.x, p.y))
     }
 
     pub fn size() -> Result<Size, Error> {
@@ -60,6 +60,10 @@ impl Terminal {
             width: size.0,
             height: size.1,
         })
+    }
+
+    fn queue_cmd(c: impl Command) -> Result<(), Error> {
+        queue!(stdout(), c)
     }
 
     pub fn execute() -> Result<(), Error> {
