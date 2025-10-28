@@ -33,10 +33,10 @@ impl View {
 
             if let Some(line) = self.buffer.text.get(row) {
                 Terminal::print(line)?;
-                Terminal::print("\r\n")?;
             } else {
                 Self::empty_row()?;
             }
+            Terminal::print("\r\n")?;
         }
         Ok(())
     }
