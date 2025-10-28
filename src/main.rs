@@ -19,7 +19,21 @@ const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
-    let mut editor = Editor::default();
+    let args: Vec<String> = std::env::args().collect();
+
+    let mut editor;
+
+    if let Some(path) = args.get(1) {
+        let path = std::path::Path::new(path);
+        
+        editor = match Editor::new(path) {
+            Ok(editor) => editor,
+            Err(e) => panic!("An error occured: {e:#?}")
+        } 
+
+    } else {
+        editor = Editor::default();
+    }
 
     editor.run();
 }

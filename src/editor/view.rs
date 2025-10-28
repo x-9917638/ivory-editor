@@ -1,4 +1,4 @@
-use std::io::Error;
+use std::{io::Error, path::Path, fs::read_to_string};
 
 use super::{
     buffer::Buffer,
@@ -11,7 +11,22 @@ pub struct View {
 }
 
 impl View {
+    pub fn load(&mut self, f: &Path) -> Result<(), Error>{
+        for line in read_to_string(f)?.lines() {
+            self.buffer.append(line);
+        }
+        Ok(())
+    }
+
     pub fn render(&mut self) -> Result<(), Error> {
+        if self.buffer.is_empty() {
+            self.render_welcome()
+        } else {
+            self.render_buffer()
+        }
+    }
+
+    fn render_buffer(&self) -> Result<(), Error> {
         let Size { height, .. } = Terminal::size()?;
         for row in 0..height {
             Terminal::clear_line()?;
@@ -19,22 +34,8 @@ impl View {
             if let Some(line) = self.buffer.text.get(row) {
                 Terminal::print(line)?;
                 Terminal::print("\r\n")?;
-                continue;
-            }
-
-            #[expect(clippy::integer_division)]
-            if row == height / 3 {
-                Self::welcome()?;
             } else {
-                Terminal::print("~")?;
-            }
-
-            if row == 0 {
-                self.buffer.append("Hello, World!");
-            }
-            
-            if row < height.saturating_sub(1) {
-                Terminal::print("\r\n")?;
+                Self::empty_row()?;
             }
         }
         Ok(())
@@ -57,5 +58,32 @@ impl View {
 
         Terminal::print(&msg)?;
         Terminal::execute()
+    }
+
+    fn render_welcome(&mut self) -> Result<(), Error> {
+        let Size { height, .. } = Terminal::size()?;
+        for row in 0..height {
+            Terminal::clear_line()?;
+
+            #[expect(clippy::integer_division)]
+            if row == height / 3 {
+                Self::welcome()?;
+            } else {
+                Self::empty_row()?;
+            }
+
+            if row == 0 {
+                Terminal::print("Hello, World!")?;
+            }
+
+            if row < height.saturating_sub(1) {
+                Terminal::print("\r\n")?;
+            }
+        }
+        Ok(())
+    }
+
+    fn empty_row() -> Result<(), Error> {
+        Terminal::print("~")
     }
 }

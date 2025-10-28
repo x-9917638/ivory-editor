@@ -1,7 +1,8 @@
 use crossterm::event::KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up};
 use crossterm::event::{Event, Event::Key, KeyEvent, KeyEventKind, KeyModifiers, read};
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::io::Error;
+use std::path::Path;
 
 use terminal::{Position, Size, Terminal};
 use view::View;
@@ -19,7 +20,11 @@ pub struct Editor {
 }
 
 impl Editor {
-    // pub fn new(opts) -> Self
+    pub fn new(f: &Path) -> Result<Self, Error> {
+        let mut new = Self::default();
+        new.view.load(f)?;
+        Ok(new)
+    }
 
     pub fn run(&mut self) {
         Terminal::initialise().unwrap();
@@ -78,11 +83,12 @@ impl Editor {
         let Position { mut x, mut y } = self.cursor_location;
         let Size { width, height } = Terminal::size()?;
         match k {
-            Down => y = y.saturating_add(1),
-            // THe following need to account for terminal dimensions
-            Up => y = min(height.saturating_sub(1), y.saturating_sub(1)),
-            Right => x = min(width.saturating_add(1), x.saturating_add(1)),
-            Left => x = min(width.saturating_sub(1), x.saturating_sub(1)),
+            // THe following need to account for terminal dimensions, hence min. (Max x, y is width, height - 1)
+            Down => y = min(height.saturating_sub(1), y.saturating_add(1)),
+            Right => x = min(width.saturating_sub(1), x.saturating_add(1)),
+            // These two don't need it because sat sub won't wrap, and the min in dimensions is 0 anyway.
+            Up => y = y.saturating_sub(1),
+            Left => x = x.saturating_sub(1),
 
             PageUp => y = 0,
             PageDown => y = height.saturating_sub(1),
