@@ -20,7 +20,7 @@ impl View {
 
     pub fn render(&mut self) -> Result<(), Error> {
         if self.buffer.is_empty() {
-            self.render_welcome()
+            Self::render_welcome()
         } else {
             self.render_buffer()
         }
@@ -60,7 +60,7 @@ impl View {
         Terminal::execute()
     }
 
-    fn render_welcome(&mut self) -> Result<(), Error> {
+    fn render_welcome() -> Result<(), Error> {
         let Size { height, .. } = Terminal::size()?;
         for row in 0..height {
             Terminal::clear_line()?;

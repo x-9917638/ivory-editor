@@ -1,6 +1,6 @@
 use crossterm::event::KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up};
 use crossterm::event::{Event, Event::Key, KeyEvent, KeyEventKind, KeyModifiers, read};
-use std::cmp::{min, max};
+use std::cmp::min;
 use std::io::Error;
 use std::path::Path;
 
