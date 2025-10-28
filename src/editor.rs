@@ -1,18 +1,24 @@
-use crossterm::event::{Event, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers, read};
+use crossterm::event::KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up};
+use crossterm::event::{Event, Event::Key, KeyEvent, KeyEventKind, KeyModifiers, read};
+use std::cmp::min;
 use std::io::Error;
 
-use crate::terminal::{Position, Size, Terminal};
-use crate::{NAME, VERSION};
+use terminal::{Position, Size, Terminal};
+use view::View;
 
+mod view;
+mod buffer;
+mod terminal;
+
+
+#[derive(Default)]
 pub struct Editor {
     should_quit: bool,
+    cursor_location: Position,
+    view: View
 }
 
 impl Editor {
-    pub const fn default() -> Self {
-        Self { should_quit: false }
-    }
-
     // pub fn new(opts) -> Self
 
     pub fn run(&mut self) {
@@ -22,25 +28,6 @@ impl Editor {
         result.unwrap();
     }
 
-    fn welcome() -> Result<(), Error> {
-        let Size { width, .. } = Terminal::size()?;
-
-        let text = format!("{NAME} - {VERSION}");
-        let length = text.len();
-        
-        // Doesn't need to be exact.
-        #[expect(clippy::integer_division)]
-        let amt = ((width.saturating_sub(length)) / 2).saturating_sub(1);
-
-        let padding = " ".repeat(amt);
-
-        let mut msg = format!("~{padding}{text}");
-        msg.truncate(width);
-
-        Terminal::print(&msg)?;
-        Terminal::execute()
-    }
-
     fn repl(&mut self) -> Result<(), Error> {
         loop {
             self.refresh_screen()?;
@@ -48,54 +35,64 @@ impl Editor {
                 break;
             }
             let event = read()?;
-            self.evaluate_event(&event);
+            self.evaluate_event(&event)?;
         }
         Ok(())
     }
 
-    fn evaluate_event(&mut self, event: &Event) {
+    fn evaluate_event(&mut self, event: &Event) -> Result<(), Error> {
         if let Key(KeyEvent {
-            code, modifiers, ..
+            code,
+            modifiers,
+            kind: KeyEventKind::Press,
+            ..
         }) = event
         {
             match code {
                 Char('q') if *modifiers == KeyModifiers::CONTROL => {
                     self.should_quit = true;
                 }
+                Up | Down | Left | Right | PageDown | PageUp | End | Home => Self::move_caret(self, *code)?,
                 _ => (),
-            }
-        }
-    }
-
-    fn draw_rows() -> Result<(), Error> {
-        let Size { height, .. } = Terminal::size()?;
-        for row in 0..height {
-            Terminal::clear_line()?;
-
-            #[expect(clippy::integer_division)]
-            if row == height / 3 {
-                Self::welcome()?;
-            } else {
-                Terminal::print("~")?;
-            }
-            if row < height.saturating_sub(1) {
-                Terminal::print("\r\n")?;
             }
         }
         Ok(())
     }
 
-    fn refresh_screen(&self) -> Result<(), Error> {
+    fn refresh_screen(&mut self) -> Result<(), Error> {
         Terminal::hide_cursor()?;
+        Terminal::move_cursor_to(Position::default())?;
         if self.should_quit {
             Terminal::clear_screen()?;
             Terminal::print("Goodbye.\r\n")?;
         } else {
-            Self::draw_rows()?;
-            Terminal::move_cursor_to(Position { x: 0, y: 0 })?;
+            self.view.render()?;
+            Terminal::move_cursor_to(self.cursor_location)?;
             Terminal::show_cursor()?;
             Terminal::execute()?;
         }
+        Ok(())
+    }
+
+    fn move_caret(&mut self, k: KeyCode) -> Result<(), Error> {
+        let Position { mut x, mut y } = self.cursor_location;
+        let Size { width, height } = Terminal::size()?;
+        match k {
+            Down => y = y.saturating_add(1),
+            // THe following need to account for terminal dimensions
+            Up => y = min(height.saturating_sub(1), y.saturating_sub(1)),
+            Right => x = min(width.saturating_add(1), x.saturating_add(1)),
+            Left => x = min(width.saturating_sub(1), x.saturating_sub(1)),
+
+            PageUp => y = 0,
+            PageDown => y = height.saturating_sub(1),
+
+            Home => x = 0,
+            End => x = width.saturating_sub(1),
+            
+            _ => ()
+        }
+        self.cursor_location = Position { x, y };
         Ok(())
     }
 }

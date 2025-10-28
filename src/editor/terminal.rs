@@ -2,7 +2,6 @@ use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode, size};
 use crossterm::{Command, queue};
-use core::fmt::Display;
 use std::io::{Error, Write as _, stdout};
 
 #[derive(Copy, Clone)]
@@ -10,7 +9,7 @@ pub struct Size {
     pub width: usize,
     pub height: usize,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
@@ -36,7 +35,7 @@ impl Terminal {
         disable_raw_mode()
     }
 
-    pub fn print(s: impl Display) -> Result<(), Error> {
+    pub fn print(s: &str) -> Result<(), Error> {
         Self::queue_cmd(Print(s))
     }
 

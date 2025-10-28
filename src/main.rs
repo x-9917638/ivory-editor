@@ -12,7 +12,6 @@
 )]
 #![allow(clippy::empty_docs)]
 mod editor;
-mod terminal;
 
 use editor::Editor;
 
