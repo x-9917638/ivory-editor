@@ -16,15 +16,23 @@ impl View {
         for row in 0..height {
             Terminal::clear_line()?;
 
+            if let Some(line) = self.buffer.text.get(row) {
+                Terminal::print(line)?;
+                Terminal::print("\r\n")?;
+                continue;
+            }
+
             #[expect(clippy::integer_division)]
             if row == height / 3 {
                 Self::welcome()?;
             } else {
                 Terminal::print("~")?;
             }
+
             if row == 0 {
                 self.buffer.append("Hello, World!");
             }
+            
             if row < height.saturating_sub(1) {
                 Terminal::print("\r\n")?;
             }
