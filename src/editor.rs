@@ -40,26 +40,35 @@ impl Editor {
                 break;
             }
             let event = read()?;
-            self.evaluate_event(&event)?;
+            self.evaluate_event(event)?;
         }
         Ok(())
     }
 
-    fn evaluate_event(&mut self, event: &Event) -> Result<(), Error> {
-        if let Key(KeyEvent {
-            code,
-            modifiers,
-            kind: KeyEventKind::Press,
-            ..
-        }) = event
-        {
-            match code {
-                Char('q') if *modifiers == KeyModifiers::CONTROL => {
-                    self.should_quit = true;
+    // Event isn't extremely big
+    #[expect(clippy::needless_pass_by_value)]
+    fn evaluate_event(&mut self, event: Event) -> Result<(), Error> {
+        match event {
+            Key(KeyEvent {
+                code,
+                modifiers,
+                kind: KeyEventKind::Press,
+                ..
+            }) => match (code, modifiers) {
+                    (Char('q'), KeyModifiers::CONTROL) => {
+                        self.should_quit = true;
+                    }
+                    (Up | Down | Left | Right | PageDown | PageUp | End | Home, _) => Self::move_caret(self, code)?,
+                    _ => (),
                 }
-                Up | Down | Left | Right | PageDown | PageUp | End | Home => Self::move_caret(self, *code)?,
-                _ => (),
-            }
+            Event::Resize(x, y) => {
+                self.view.resize(
+                    // u16 -> usize should not raise problems unless on an extremely outdated system (where usize::MAX < u16::MAX)
+                    #[expect(clippy::as_conversions)]
+                    Size { width: x as usize, height: y as usize }
+                );
+            },
+            _ => ()
         }
         Ok(())
     }
