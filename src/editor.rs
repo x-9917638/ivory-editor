@@ -85,7 +85,7 @@ impl Editor {
 
     fn refresh_screen(&mut self) {
         _ = Terminal::hide_cursor();
-        _ = self.view.render();
+        self.view.render();
         _ = Terminal::move_cursor_to(self.cursor_location);
         _ = Terminal::show_cursor();
         _ = Terminal::execute();

@@ -4,7 +4,7 @@ use super::{
     buffer::Buffer,
     terminal::{Size, Terminal},
 };
-use crate::{NAME, VERSION, editor::terminal::Position};
+use crate::{NAME, VERSION};
 pub struct View {
     buffer: Buffer,
     needs_redraw: bool,
