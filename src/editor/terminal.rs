@@ -1,6 +1,9 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
-use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode, size};
+use crossterm::terminal::{
+    Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+    enable_raw_mode, size,
+};
 use crossterm::{Command, queue};
 use std::io::{Error, Write as _, stdout};
 
@@ -26,12 +29,16 @@ pub struct Terminal;
 impl Terminal {
     pub fn initialise() -> Result<(), Error> {
         enable_raw_mode()?;
+        Self::enter_alternate_screen()?;
         Self::clear_screen()?;
         Self::move_cursor_to(Position { x: 0, y: 0 })?;
         Self::execute()
     }
 
     pub fn terminate() -> Result<(), Error> {
+        Self::leave_alternate_screen()?;
+        Self::show_cursor()?;
+        Self::execute()?;
         disable_raw_mode()
     }
 
@@ -54,7 +61,22 @@ impl Terminal {
     pub fn show_cursor() -> Result<(), Error> {
         Self::queue_cmd(Show)
     }
-    
+
+    pub fn enter_alternate_screen() -> Result<(), Error> {
+        Self::queue_cmd(EnterAlternateScreen)?;
+
+        Ok(())
+    }
+    pub fn leave_alternate_screen() -> Result<(), Error> {
+        Self::queue_cmd(LeaveAlternateScreen)?;
+        Ok(())
+    }
+
+    pub fn print_line(pos: usize, text: &str) -> Result<(), Error> {
+        Self::move_cursor_to(Position { x: 0, y: pos })?;
+        Self::clear_line()?;
+        Self::print(text)
+    }
 
     /// Moves the cursor to the given Position.
     /// # Arguments

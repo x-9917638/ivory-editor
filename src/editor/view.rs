@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, io::Error, path::Path};
+use std::{fs::read_to_string, io::Error};
 
 use super::{
     buffer::Buffer,
@@ -16,27 +16,27 @@ impl Default for View {
         Self {
             buffer: Buffer::default(),
             needs_redraw: true,
-            size: Terminal::size().unwrap_or_default()
+            size: Terminal::size().unwrap_or_default(),
         }
     }
 }
 
 impl View {
-    pub fn load(&mut self, f: &Path) -> Result<(), Error> {
+    pub fn load(&mut self, f: &str) -> Result<(), Error> {
         for line in read_to_string(f)?.lines() {
             self.buffer.append(line);
         }
         Ok(())
     }
 
-    pub fn render(&mut self) -> Result<(), Error> {
+    pub fn render(&mut self) {
         if !self.needs_redraw {
-         return Ok(());
+            return;
         }
         let Size { height, width } = self.size;
 
         if height == 0 || width == 0 {
-            return Ok(());
+            return;
         }
 
         #[expect(clippy::integer_division)]
@@ -44,27 +44,29 @@ impl View {
 
         for row in 0..height {
             if let Some(line) = self.buffer.text.get(row) {
-                let line = if line.len() > width {&line[0..width]} else {line};
-                Self::render_line(row, line)?;
+                let line = if line.len() > width {
+                    &line[0..width]
+                } else {
+                    line
+                };
+                Self::render_line(row, line);
             } else if row == welcome_row && self.buffer.is_empty() {
-                Self::render_line(row, &Self::construct_welcome_msg(width))?;
+                Self::render_line(row, &Self::construct_welcome_msg(width));
             } else {
-                Self::render_line(row, "~")?;
+                Self::render_line(row, "~");
             }
         }
-        Ok(())
     }
 
-    fn render_line(pos: usize, text: &str) -> Result<(), Error> {
-        Terminal::move_cursor_to(Position {x: 0, y: pos})?;
-        Terminal::clear_line()?;
-        Terminal::print(text)
+    fn render_line(pos: usize, text: &str) {
+        let result = Terminal::print_line(pos, text);
+        debug_assert!(result.is_ok(), "Failed to render line");
     }
 
     fn construct_welcome_msg(width: usize) -> String {
         let text = format!("{NAME} - {VERSION}");
         let length = text.len();
-        
+
         // Abort printing welcome if their terminal is too small.
         if width <= length {
             return String::from("~");

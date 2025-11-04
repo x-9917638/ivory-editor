@@ -21,19 +21,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    let mut editor;
-
-    if let Some(path) = args.get(1) {
-        let path = std::path::Path::new(path);
-        
-        editor = match Editor::new(path) {
-            Ok(editor) => editor,
-            Err(e) => panic!("An error occured: {e:#?}")
-        } 
-
-    } else {
-        editor = Editor::default();
-    }
+    let mut editor = match Editor::new(args.get(1)) {
+        Ok(e) => e,
+        Err(e) => panic!("{e}"),
+    };
 
     editor.run();
 }
